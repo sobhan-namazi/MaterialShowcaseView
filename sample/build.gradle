@@ -5,7 +5,7 @@ android {
     compileSdkVersion 30
 
     defaultConfig {
-        applicationId "uk.co.deanwild.materialshowcaseviewsample"
+        applicationId "com.sheypoor.sobhan.materialshowcaseviewsample"
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
