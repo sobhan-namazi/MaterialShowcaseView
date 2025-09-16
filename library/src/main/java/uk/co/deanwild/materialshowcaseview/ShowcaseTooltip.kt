@@ -1,753 +1,783 @@
-package uk.co.deanwild.materialshowcaseview;
+package uk.co.deanwild.materialshowcaseview
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.app.Activity
+import android.app.DialogFragment
+import android.app.Fragment
+import android.content.Context
+import android.content.ContextWrapper
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Point
+import android.graphics.Rect
+import android.graphics.RectF
+import android.graphics.Typeface
+import android.text.Html
+import android.view.View
+import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.view.Window
+import android.widget.FrameLayout
+import android.widget.TextView
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.app.Activity;
-import android.app.DialogFragment;
-import android.app.Fragment;
-import android.content.Context;
-import android.content.ContextWrapper;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.graphics.Typeface;
-
-
-import android.text.Html;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
-import android.view.Window;
-import android.widget.FrameLayout;
-import android.widget.TextView;
-
-import java.util.Arrays;
 
 /**
  * Base on original code by florentchampigny
  * https://github.com/florent37/ViewTooltip
  */
-
-public class ShowcaseTooltip {
-
-    private View rootView;
-    private View view;
-    private TooltipView tooltip_view;
+class ShowcaseTooltip private constructor(context: Context?) {
+    private var rootView: View? = null
+    private var view: View? = null
+    private val tooltipView: TooltipView
 
 
-    private ShowcaseTooltip(Context context){
-        MyContext myContext = new MyContext(getActivityContext(context));
-        this.tooltip_view = new TooltipView(myContext.getContext());
+    init {
+        val myContext: MyContext = MyContext(getActivityContext(context))
+        this.tooltipView = TooltipView(myContext.getContext()!!)
     }
 
-    public static ShowcaseTooltip build(Context context) {
-        return new ShowcaseTooltip(context);
+    fun configureTarget(rootView: ViewGroup?, view: View?) {
+        this.rootView = rootView
+        this.view = view
     }
 
-    public void configureTarget(ViewGroup rootView, View view) {
-        this.rootView = rootView;
-        this.view = view;
+    fun position(position: Position): ShowcaseTooltip {
+        this.tooltipView.setPosition(position)
+        return this
     }
 
-    private static Activity getActivityContext(Context context) {
-        while (context instanceof ContextWrapper) {
-            if (context instanceof Activity) {
-                return (Activity) context;
-            }
-            context = ((ContextWrapper) context).getBaseContext();
-        }
-        return null;
+    fun customView(customView: View): ShowcaseTooltip {
+        this.tooltipView.setCustomView(customView)
+        return this
     }
 
-    public ShowcaseTooltip position(Position position) {
-        this.tooltip_view.setPosition(position);
-        return this;
+    fun customView(viewId: Int): ShowcaseTooltip {
+        this.tooltipView.setCustomView((view!!.context as Activity).findViewById(viewId))
+        return this
     }
 
-    public ShowcaseTooltip customView(View customView) {
-        this.tooltip_view.setCustomView(customView);
-        return this;
+    fun arrowWidth(arrowWidth: Int): ShowcaseTooltip {
+        this.tooltipView.setArrowWidth(arrowWidth)
+        return this
     }
 
-    public ShowcaseTooltip customView(int viewId) {
-        this.tooltip_view.setCustomView(((Activity) view.getContext()).findViewById(viewId));
-        return this;
+    fun arrowHeight(arrowHeight: Int): ShowcaseTooltip {
+        this.tooltipView.setArrowHeight(arrowHeight)
+        return this
     }
 
-    public ShowcaseTooltip arrowWidth(int arrowWidth) {
-        this.tooltip_view.setArrowWidth(arrowWidth);
-        return this;
+    fun arrowSourceMargin(arrowSourceMargin: Int): ShowcaseTooltip {
+        this.tooltipView.setArrowSourceMargin(arrowSourceMargin)
+        return this
     }
 
-    public ShowcaseTooltip arrowHeight(int arrowHeight) {
-        this.tooltip_view.setArrowHeight(arrowHeight);
-        return this;
+    fun arrowTargetMargin(arrowTargetMargin: Int): ShowcaseTooltip {
+        this.tooltipView.setArrowTargetMargin(arrowTargetMargin)
+        return this
     }
 
-    public ShowcaseTooltip arrowSourceMargin(int arrowSourceMargin) {
-        this.tooltip_view.setArrowSourceMargin(arrowSourceMargin);
-        return this;
+    fun align(align: ALIGN): ShowcaseTooltip {
+        this.tooltipView.setAlign(align)
+        return this
     }
 
-    public ShowcaseTooltip arrowTargetMargin(int arrowTargetMargin) {
-        this.tooltip_view.setArrowTargetMargin(arrowTargetMargin);
-        return this;
-    }
+    fun show(margin: Int): TooltipView {
+        val activityContext = tooltipView.context
+        if (activityContext != null && activityContext is Activity) {
+            val decorView =
+                if (rootView != null) rootView as ViewGroup else activityContext.window
+                    .decorView as ViewGroup
 
-    public ShowcaseTooltip align(ALIGN align) {
-        this.tooltip_view.setAlign(align);
-        return this;
-    }
+            view!!.postDelayed(object : Runnable {
+                override fun run() {
+                    val rect = Rect()
+                    view!!.getGlobalVisibleRect(rect)
 
-    public TooltipView show(final int margin) {
-        final Context activityContext = tooltip_view.getContext();
-        if (activityContext != null && activityContext instanceof Activity) {
-            final ViewGroup decorView = rootView != null ?
-                    (ViewGroup) rootView :
-                    (ViewGroup) ((Activity) activityContext).getWindow().getDecorView();
+                    val rootGlobalRect = Rect()
+                    val rootGlobalOffset = Point()
+                    decorView.getGlobalVisibleRect(rootGlobalRect, rootGlobalOffset)
 
-            view.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    final Rect rect = new Rect();
-                    view.getGlobalVisibleRect(rect);
-
-                    final Rect rootGlobalRect = new Rect();
-                    final Point rootGlobalOffset = new Point();
-                    decorView.getGlobalVisibleRect(rootGlobalRect, rootGlobalOffset);
-
-                    int[] location = new int[2];
-                    view.getLocationOnScreen(location);
-                    rect.left = location[0];
-                    if (rootGlobalOffset != null) {
-                        rect.top -= rootGlobalOffset.y;
-                        rect.bottom -= rootGlobalOffset.y;
-                        rect.left -= rootGlobalOffset.x;
-                        rect.right -= rootGlobalOffset.x;
-                    }
+                    val location = IntArray(2)
+                    view!!.getLocationOnScreen(location)
+                    rect.left = location[0]
+                    rect.top -= rootGlobalOffset.y
+                    rect.bottom -= rootGlobalOffset.y
+                    rect.left -= rootGlobalOffset.x
+                    rect.right -= rootGlobalOffset.x
 
                     // fixes bottom mode
-                    rect.top -= margin;
+                    rect.top -= margin
 
                     // fixes top mode
-                    rect.bottom += margin;
+                    rect.bottom += margin
 
-                    decorView.addView(tooltip_view, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    decorView.addView(
+                        tooltipView,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    )
 
-                    tooltip_view.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                        @Override
-                        public boolean onPreDraw() {
+                    tooltipView.viewTreeObserver
+                        .addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                            override fun onPreDraw(): Boolean {
+                                tooltipView.setup(rect, decorView.width)
 
-                            tooltip_view.setup(rect, decorView.getWidth());
+                                tooltipView.viewTreeObserver.removeOnPreDrawListener(this)
 
-                            tooltip_view.getViewTreeObserver().removeOnPreDrawListener(this);
-
-                            return false;
-                        }
-                    });
+                                return false
+                            }
+                        })
                 }
-            }, 100);
+            }, 100)
         }
-        return tooltip_view;
+        return tooltipView
     }
 
-    public ShowcaseTooltip color(int color) {
-        this.tooltip_view.setColor(color);
-        return this;
+    fun color(color: Int): ShowcaseTooltip {
+        this.tooltipView.setColor(color)
+        return this
     }
 
-    public ShowcaseTooltip color(Paint paint) {
-        this.tooltip_view.setPaint(paint);
-        return this;
+    fun color(paint: Paint): ShowcaseTooltip {
+        this.tooltipView.setPaint(paint)
+        return this
     }
 
-    public ShowcaseTooltip onDisplay(ListenerDisplay listener) {
-        this.tooltip_view.setListenerDisplay(listener);
-        return this;
+    fun onDisplay(listener: ListenerDisplay?): ShowcaseTooltip {
+        this.tooltipView.setListenerDisplay(listener)
+        return this
     }
 
-    public ShowcaseTooltip padding(int left, int top, int right, int bottom) {
-        this.tooltip_view.paddingTop = top;
-        this.tooltip_view.paddingBottom = bottom;
-        this.tooltip_view.paddingLeft = left;
-        this.tooltip_view.paddingRight = right;
-        return this;
+    fun padding(left: Int, top: Int, right: Int, bottom: Int): ShowcaseTooltip {
+        this.tooltipView.setPadding(left, top, right, bottom)
+        return this
     }
 
-    public ShowcaseTooltip animation(TooltipAnimation tooltipAnimation) {
-        this.tooltip_view.setTooltipAnimation(tooltipAnimation);
-        return this;
+    fun animation(tooltipAnimation: TooltipAnimation): ShowcaseTooltip {
+        this.tooltipView.setTooltipAnimation(tooltipAnimation)
+        return this
     }
 
-    public ShowcaseTooltip text(String text) {
-        this.tooltip_view.setText(text);
-        return this;
+    fun text(text: String?): ShowcaseTooltip {
+        this.tooltipView.setText(text)
+        return this
     }
 
-    public ShowcaseTooltip text(int text) {
-        this.tooltip_view.setText(text);
-        return this;
+    fun text(text: Int): ShowcaseTooltip {
+        this.tooltipView.setText(text)
+        return this
     }
 
-    public ShowcaseTooltip corner(int corner) {
-        this.tooltip_view.setCorner(corner);
-        return this;
+    fun corner(corner: Int): ShowcaseTooltip {
+        this.tooltipView.setCorner(corner)
+        return this
     }
 
-    public ShowcaseTooltip textColor(int textColor) {
-        this.tooltip_view.setTextColor(textColor);
-        return this;
+    fun textColor(textColor: Int): ShowcaseTooltip {
+        this.tooltipView.setTextColor(textColor)
+        return this
     }
 
-    public ShowcaseTooltip textTypeFace(Typeface typeface) {
-        this.tooltip_view.setTextTypeFace(typeface);
-        return this;
+    fun textTypeFace(typeface: Typeface?): ShowcaseTooltip {
+        this.tooltipView.setTextTypeFace(typeface)
+        return this
     }
 
-    public ShowcaseTooltip textSize(int unit, float textSize) {
-        this.tooltip_view.setTextSize(unit, textSize);
-        return this;
+    fun textSize(unit: Int, textSize: Float): ShowcaseTooltip {
+        this.tooltipView.setTextSize(unit, textSize)
+        return this
     }
 
-    public ShowcaseTooltip setTextGravity(int textGravity) {
-        this.tooltip_view.setTextGravity(textGravity);
-        return this;
+    fun setTextGravity(textGravity: Int): ShowcaseTooltip {
+        this.tooltipView.setTextGravity(textGravity)
+        return this
     }
 
-    public ShowcaseTooltip distanceWithView(int distance) {
-        this.tooltip_view.setDistanceWithView(distance);
-        return this;
+    fun distanceWithView(distance: Int): ShowcaseTooltip {
+        this.tooltipView.setDistanceWithView(distance)
+        return this
     }
 
-    public ShowcaseTooltip border(int color, float width) {
-        Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        borderPaint.setColor(color);
-        borderPaint.setStyle(Paint.Style.STROKE);
-        borderPaint.setStrokeWidth(width);
-        this.tooltip_view.setBorderPaint(borderPaint);
-        return this;
+    fun border(color: Int, width: Float): ShowcaseTooltip {
+        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        borderPaint.color = color
+        borderPaint.style = Paint.Style.STROKE
+        borderPaint.strokeWidth = width
+        this.tooltipView.setBorderPaint(borderPaint)
+        return this
     }
 
-    public enum Position {
+    enum class Position {
         LEFT,
         RIGHT,
         TOP,
         BOTTOM,
     }
 
-    public enum ALIGN {
+    enum class ALIGN {
         START,
         CENTER,
         END
     }
 
-    public interface TooltipAnimation {
-        void animateEnter(View view, Animator.AnimatorListener animatorListener);
+    interface TooltipAnimation {
+        fun animateEnter(view: View?, animatorListener: Animator.AnimatorListener?)
 
-        void animateExit(View view, Animator.AnimatorListener animatorListener);
+        fun animateExit(view: View?, animatorListener: Animator.AnimatorListener?)
     }
 
-    public interface ListenerDisplay {
-        void onDisplay(View view);
+    interface ListenerDisplay {
+        fun onDisplay(view: View?)
     }
 
-    public static class FadeTooltipAnimation implements TooltipAnimation {
+    class FadeTooltipAnimation : TooltipAnimation {
+        private var fadeDuration: Long = 400
 
-        private long fadeDuration = 400;
+        constructor()
 
-        public FadeTooltipAnimation() {
+        constructor(fadeDuration: Long) {
+            this.fadeDuration = fadeDuration
         }
 
-        public FadeTooltipAnimation(long fadeDuration) {
-            this.fadeDuration = fadeDuration;
+        override fun animateEnter(view: View?, animatorListener: Animator.AnimatorListener?) {
+            view?.alpha = 0f
+            view?.animate()?.alpha(1f)?.setDuration(fadeDuration)?.setListener(animatorListener)
         }
 
-        @Override
-        public void animateEnter(View view, Animator.AnimatorListener animatorListener) {
-            view.setAlpha(0);
-            view.animate().alpha(1).setDuration(fadeDuration).setListener(animatorListener);
-        }
-
-        @Override
-        public void animateExit(View view, Animator.AnimatorListener animatorListener) {
-            view.animate().alpha(0).setDuration(fadeDuration).setListener(animatorListener);
+        override fun animateExit(view: View?, animatorListener: Animator.AnimatorListener?) {
+            view?.animate()?.alpha(0f)?.setDuration(fadeDuration)?.setListener(animatorListener)
         }
     }
 
-    public static class TooltipView extends FrameLayout {
+    class TooltipView(context: Context) : FrameLayout(context) {
+        private var arrowHeight = 15
+        private var arrowWidth = 15
+        private var arrowSourceMargin = 0
+        private var arrowTargetMargin = 0
+        protected var childView: View
+        private var color = Color.parseColor("#FFFFFF")
+        private var bubblePath: Path? = null
+        private var bubblePaint: Paint
+        private var borderPaint: Paint?
+        private var position: Position? = Position.BOTTOM
+        private var align = ALIGN.CENTER
 
-        private static final int MARGIN_SCREEN_BORDER_TOOLTIP = 30;
-        private int arrowHeight = 15;
-        private int arrowWidth = 15;
-        private int arrowSourceMargin = 0;
-        private int arrowTargetMargin = 0;
-        protected View childView;
-        private int color = Color.parseColor("#FFFFFF");
-        private Path bubblePath;
-        private Paint bubblePaint;
-        private Paint borderPaint;
-        private Position position = Position.BOTTOM;
-        private ALIGN align = ALIGN.CENTER;
+        private var listenerDisplay: ListenerDisplay? = null
 
-        private ListenerDisplay listenerDisplay;
+        private var tooltipAnimation: TooltipAnimation = FadeTooltipAnimation()
 
-        private TooltipAnimation tooltipAnimation = new FadeTooltipAnimation();
+        private var corner = 30
 
-        private int corner = 30;
+        private var paddingTop = 20
+        private var paddingBottom = 30
+        private var paddingRight = 60
+        private var paddingLeft = 60
 
-        private int paddingTop = 20;
-        private int paddingBottom = 30;
-        private int paddingRight = 60;
-        private int paddingLeft = 60;
+        private var viewRect: Rect? = null
+        private var distanceWithView = 0
 
-        private Rect viewRect;
-        private int distanceWithView = 0;
+        init {
+            setWillNotDraw(false)
 
-        public TooltipView(Context context) {
-            super(context);
+            this.childView = TextView(context)
+            (childView as TextView).setTextColor(Color.BLACK)
+            addView(childView, LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            childView.setPadding(0, 0, 0, 0)
 
-            setWillNotDraw(false);
+            bubblePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+            bubblePaint.setColor(color)
+            bubblePaint.setStyle(Paint.Style.FILL)
 
-            this.childView = new TextView(context);
-            ((TextView) childView).setTextColor(Color.BLACK);
-            addView(childView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            childView.setPadding(0, 0, 0, 0);
+            borderPaint = null
 
-            bubblePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            bubblePaint.setColor(color);
-            bubblePaint.setStyle(Paint.Style.FILL);
-
-            borderPaint = null;
-
-            setLayerType(LAYER_TYPE_SOFTWARE, bubblePaint);
-
+            setLayerType(LAYER_TYPE_SOFTWARE, bubblePaint)
         }
 
-        public void setCustomView(View customView) {
-            this.removeView(childView);
-            this.childView = customView;
-            addView(childView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        fun setCustomView(customView: View) {
+            this.removeView(childView)
+            this.childView = customView
+            addView(childView, LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         }
 
-        public void setColor(int color) {
-            this.color = color;
-            bubblePaint.setColor(color);
-            postInvalidate();
+        fun setColor(color: Int) {
+            this.color = color
+            bubblePaint.setColor(color)
+            postInvalidate()
         }
 
-        public void setPaint(Paint paint) {
-            bubblePaint = paint;
-            setLayerType(LAYER_TYPE_SOFTWARE, paint);
-            postInvalidate();
+        fun setPaint(paint: Paint) {
+            bubblePaint = paint
+            setLayerType(LAYER_TYPE_SOFTWARE, paint)
+            postInvalidate()
         }
 
-        public void setPosition(Position position) {
-            this.position = position;
-            switch (position) {
-                case TOP:
-                    setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom + arrowHeight);
-                    break;
-                case BOTTOM:
-                    setPadding(paddingLeft, paddingTop + arrowHeight, paddingRight, paddingBottom);
-                    break;
-                case LEFT:
-                    setPadding(paddingLeft, paddingTop, paddingRight + arrowHeight, paddingBottom);
-                    break;
-                case RIGHT:
-                    setPadding(paddingLeft + arrowHeight, paddingTop, paddingRight, paddingBottom);
-                    break;
+        fun setPosition(position: Position) {
+            this.position = position
+            when (position) {
+                Position.TOP -> setPadding(
+                    paddingLeft,
+                    paddingTop,
+                    paddingRight,
+                    paddingBottom + arrowHeight
+                )
+
+                Position.BOTTOM -> setPadding(
+                    paddingLeft,
+                    paddingTop + arrowHeight,
+                    paddingRight,
+                    paddingBottom
+                )
+
+                Position.LEFT -> setPadding(
+                    paddingLeft,
+                    paddingTop,
+                    paddingRight + arrowHeight,
+                    paddingBottom
+                )
+
+                Position.RIGHT -> setPadding(
+                    paddingLeft + arrowHeight,
+                    paddingTop,
+                    paddingRight,
+                    paddingBottom
+                )
             }
-            postInvalidate();
+            postInvalidate()
         }
 
-        public void setAlign(ALIGN align) {
-            this.align = align;
-            postInvalidate();
+        fun setAlign(align: ALIGN) {
+            this.align = align
+            postInvalidate()
         }
 
-        public void setText(String text) {
-            if (childView instanceof TextView) {
-                ((TextView) this.childView).setText(Html.fromHtml(text));
+        fun setText(text: String?) {
+            if (childView is TextView) {
+                (this.childView as TextView).text = Html.fromHtml(text)
             }
-            postInvalidate();
+            postInvalidate()
         }
 
-        public void setText(int text) {
-            if (childView instanceof TextView) {
-                ((TextView) this.childView).setText(text);
+        fun setText(text: Int) {
+            if (childView is TextView) {
+                (this.childView as TextView).setText(text)
             }
-            postInvalidate();
+            postInvalidate()
         }
 
-        public void setTextColor(int textColor) {
-            if (childView instanceof TextView) {
-                ((TextView) this.childView).setTextColor(textColor);
+        fun setTextColor(textColor: Int) {
+            if (childView is TextView) {
+                (this.childView as TextView).setTextColor(textColor)
             }
-            postInvalidate();
+            postInvalidate()
         }
 
-        public int getArrowHeight() {
-            return arrowHeight;
+        fun getArrowHeight(): Int {
+            return arrowHeight
         }
 
-        public void setArrowHeight(int arrowHeight) {
-            this.arrowHeight = arrowHeight;
-            postInvalidate();
+        fun setArrowHeight(arrowHeight: Int) {
+            this.arrowHeight = arrowHeight
+            postInvalidate()
         }
 
-        public int getArrowWidth() {
-            return arrowWidth;
+        fun getArrowWidth(): Int {
+            return arrowWidth
         }
 
-        public void setArrowWidth(int arrowWidth) {
-            this.arrowWidth = arrowWidth;
-            postInvalidate();
+        fun setArrowWidth(arrowWidth: Int) {
+            this.arrowWidth = arrowWidth
+            postInvalidate()
         }
 
-        public int getArrowSourceMargin() {
-            return arrowSourceMargin;
+        fun getArrowSourceMargin(): Int {
+            return arrowSourceMargin
         }
 
-        public void setArrowSourceMargin(int arrowSourceMargin) {
-            this.arrowSourceMargin = arrowSourceMargin;
-            postInvalidate();
+        fun setArrowSourceMargin(arrowSourceMargin: Int) {
+            this.arrowSourceMargin = arrowSourceMargin
+            postInvalidate()
         }
 
-        public int getArrowTargetMargin() {
-            return arrowTargetMargin;
+        fun getArrowTargetMargin(): Int {
+            return arrowTargetMargin
         }
 
-        public void setArrowTargetMargin(int arrowTargetMargin) {
-            this.arrowTargetMargin = arrowTargetMargin;
-            postInvalidate();
+        fun setArrowTargetMargin(arrowTargetMargin: Int) {
+            this.arrowTargetMargin = arrowTargetMargin
+            postInvalidate()
         }
 
-        public void setTextTypeFace(Typeface textTypeFace) {
-            if (childView instanceof TextView) {
-                ((TextView) this.childView).setTypeface(textTypeFace);
+        fun setTextTypeFace(textTypeFace: Typeface?) {
+            if (childView is TextView) {
+                (this.childView as TextView).setTypeface(textTypeFace)
             }
-            postInvalidate();
+            postInvalidate()
         }
 
-        public void setTextSize(int unit, float size) {
-            if (childView instanceof TextView) {
-                ((TextView) this.childView).setTextSize(unit, size);
+        fun setTextSize(unit: Int, size: Float) {
+            if (childView is TextView) {
+                (this.childView as TextView).setTextSize(unit, size)
             }
-            postInvalidate();
+            postInvalidate()
         }
 
-        public void setTextGravity(int textGravity) {
-            if (childView instanceof TextView) {
-                ((TextView) this.childView).setGravity(textGravity);
+        fun setTextGravity(textGravity: Int) {
+            if (childView is TextView) {
+                (this.childView as TextView).setGravity(textGravity)
             }
-            postInvalidate();
+            postInvalidate()
         }
 
-        public void setCorner(int corner) {
-            this.corner = corner;
+        fun setCorner(corner: Int) {
+            this.corner = corner
         }
 
-        @Override
-        protected void onSizeChanged(int width, int height, int oldw, int oldh) {
-            super.onSizeChanged(width, height, oldw, oldh);
+        override fun onSizeChanged(width: Int, height: Int, oldw: Int, oldh: Int) {
+            super.onSizeChanged(width, height, oldw, oldh)
 
-            bubblePath = drawBubble(new RectF(0, 0, width, height), corner, corner, corner, corner);
+            bubblePath = drawBubble(
+                RectF(0f, 0f, width.toFloat(), height.toFloat()),
+                corner.toFloat(),
+                corner.toFloat(),
+                corner.toFloat(),
+                corner.toFloat()
+            )
         }
 
-        @Override
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
 
             if (bubblePath != null) {
-                canvas.drawPath(bubblePath, bubblePaint);
+                canvas.drawPath(bubblePath!!, bubblePaint)
                 if (borderPaint != null) {
-                    canvas.drawPath(bubblePath, borderPaint);
+                    canvas.drawPath(bubblePath!!, borderPaint!!)
                 }
             }
         }
 
-        public void setListenerDisplay(ListenerDisplay listener) {
-            this.listenerDisplay = listener;
+        fun setListenerDisplay(listener: ListenerDisplay?) {
+            this.listenerDisplay = listener
         }
 
-        public void setTooltipAnimation(TooltipAnimation tooltipAnimation) {
-            this.tooltipAnimation = tooltipAnimation;
+        fun setTooltipAnimation(tooltipAnimation: TooltipAnimation) {
+            this.tooltipAnimation = tooltipAnimation
         }
 
-        protected void startEnterAnimation() {
-            tooltipAnimation.animateEnter(this, new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    super.onAnimationEnd(animation);
+        protected fun startEnterAnimation() {
+            tooltipAnimation.animateEnter(this, object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator?) {
+                    super.onAnimationEnd(animation)
                     if (listenerDisplay != null) {
-                        listenerDisplay.onDisplay(TooltipView.this);
+                        listenerDisplay!!.onDisplay(this@TooltipView)
                     }
                 }
-            });
+            })
         }
 
-        public void setupPosition(Rect rect) {
-
-            int x, y;
+        fun setupPosition(rect: Rect) {
+            val x: Int
+            val y: Int
 
             if (position == Position.LEFT || position == Position.RIGHT) {
-                if (position == Position.LEFT) {
-                    x = rect.left - getWidth() - distanceWithView;
+                x = if (position == Position.LEFT) {
+                    rect.left - width - distanceWithView
                 } else {
-                    x = rect.right + distanceWithView;
+                    rect.right + distanceWithView
                 }
-                y = rect.top + getAlignOffset(getHeight(), rect.height());
+                y = rect.top + getAlignOffset(height, rect.height())
             } else {
-                if (position == Position.BOTTOM) {
-                    y = rect.bottom + distanceWithView;
+                y = if (position == Position.BOTTOM) {
+                    rect.bottom + distanceWithView
                 } else { // top
-                    y = rect.top - getHeight() - distanceWithView;
+                    rect.top - height - distanceWithView
                 }
-                x = rect.left + getAlignOffset(getWidth(), rect.width());
+                x = rect.left + getAlignOffset(width, rect.width())
             }
 
-            setTranslationX(x);
-            setTranslationY(y);
+            translationX = x.toFloat()
+            translationY = y.toFloat()
         }
 
-        private int getAlignOffset(int myLength, int hisLength) {
-            switch (align) {
-                case END:
-                    return hisLength - myLength;
-                case CENTER:
-                    return (hisLength - myLength) / 2;
+        private fun getAlignOffset(myLength: Int, hisLength: Int): Int {
+            return when (align) {
+                ALIGN.END -> hisLength - myLength
+                ALIGN.CENTER -> (hisLength - myLength) / 2
+                else -> 0
             }
-            return 0;
         }
 
-        private Path drawBubble(RectF myRect, float topLeftDiameter, float topRightDiameter, float bottomRightDiameter, float bottomLeftDiameter) {
-            final Path path = new Path();
+        private fun drawBubble(
+            myRect: RectF,
+            topLeftDiameter: Float,
+            topRightDiameter: Float,
+            bottomRightDiameter: Float,
+            bottomLeftDiameter: Float
+        ): Path {
+            var topLeftDiameter = topLeftDiameter
+            var topRightDiameter = topRightDiameter
+            var bottomRightDiameter = bottomRightDiameter
+            var bottomLeftDiameter = bottomLeftDiameter
+            val path = Path()
 
-            if (viewRect == null)
-                return path;
+            if (viewRect == null) return path
 
-            topLeftDiameter = topLeftDiameter < 0 ? 0 : topLeftDiameter;
-            topRightDiameter = topRightDiameter < 0 ? 0 : topRightDiameter;
-            bottomLeftDiameter = bottomLeftDiameter < 0 ? 0 : bottomLeftDiameter;
-            bottomRightDiameter = bottomRightDiameter < 0 ? 0 : bottomRightDiameter;
+            topLeftDiameter = if (topLeftDiameter < 0) 0f else topLeftDiameter
+            topRightDiameter = if (topRightDiameter < 0) 0f else topRightDiameter
+            bottomLeftDiameter = if (bottomLeftDiameter < 0) 0f else bottomLeftDiameter
+            bottomRightDiameter = if (bottomRightDiameter < 0) 0f else bottomRightDiameter
 
-            float spacingLeft = 30;
-            final float spacingTop = this.position == Position.BOTTOM ? arrowHeight : 0;
-            float spacingRight = 30;
-            final float spacingBottom = this.position == Position.TOP ? arrowHeight : 0;
+            val spacingLeft = 30f
+            val spacingTop = (if (this.position == Position.BOTTOM) arrowHeight else 0).toFloat()
+            val spacingRight = 30f
+            val spacingBottom = (if (this.position == Position.TOP) arrowHeight else 0).toFloat()
 
-            final float left = spacingLeft + myRect.left;
-            final float top = spacingTop + myRect.top;
-            final float right = myRect.right - spacingRight;
-            final float bottom = myRect.bottom - spacingBottom;
-            final float centerX = viewRect.centerX() - getX();
+            val left = spacingLeft + myRect.left
+            val top = spacingTop + myRect.top
+            val right = myRect.right - spacingRight
+            val bottom = myRect.bottom - spacingBottom
+            val centerX = viewRect!!.centerX() - x
 
-            final float arrowSourceX = (Arrays.asList(Position.TOP, Position.BOTTOM).contains(this.position))
-                    ? centerX + arrowSourceMargin
-                    : centerX;
-            final float arrowTargetX = (Arrays.asList(Position.TOP, Position.BOTTOM).contains(this.position))
-                    ? centerX + arrowTargetMargin
-                    : centerX;
-            final float arrowSourceY = (Arrays.asList(Position.RIGHT, Position.LEFT).contains(this.position))
-                    ? bottom / 2f - arrowSourceMargin
-                    : bottom / 2f;
-            final float arrowTargetY = (Arrays.asList(Position.RIGHT, Position.LEFT).contains(this.position))
-                    ? bottom / 2f - arrowTargetMargin
-                    : bottom / 2f;
+            val arrowSourceX =
+                if (listOf<Position?>(Position.TOP, Position.BOTTOM).contains(this.position))
+                    centerX + arrowSourceMargin
+                else
+                    centerX
+            val arrowTargetX =
+                if (listOf<Position?>(Position.TOP, Position.BOTTOM).contains(this.position))
+                    centerX + arrowTargetMargin
+                else
+                    centerX
+            val arrowSourceY =
+                if (listOf<Position?>(Position.RIGHT, Position.LEFT).contains(this.position))
+                    bottom / 2f - arrowSourceMargin
+                else
+                    bottom / 2f
+            val arrowTargetY =
+                if (listOf<Position?>(Position.RIGHT, Position.LEFT).contains(this.position))
+                    bottom / 2f - arrowTargetMargin
+                else
+                    bottom / 2f
 
-            path.moveTo(left + topLeftDiameter / 2f, top);
+            path.moveTo(left + topLeftDiameter / 2f, top)
+
             //LEFT, TOP
-
             if (position == Position.BOTTOM) {
-                path.lineTo(arrowSourceX - arrowWidth, top);
-                path.lineTo(arrowTargetX, myRect.top);
-                path.lineTo(arrowSourceX + arrowWidth, top);
+                path.lineTo(arrowSourceX - arrowWidth, top)
+                path.lineTo(arrowTargetX, myRect.top)
+                path.lineTo(arrowSourceX + arrowWidth, top)
             }
-            path.lineTo(right - topRightDiameter / 2f, top);
+            path.lineTo(right - topRightDiameter / 2f, top)
 
-            path.quadTo(right, top, right, top + topRightDiameter / 2);
+            path.quadTo(right, top, right, top + topRightDiameter / 2)
+
             //RIGHT, TOP
-
             if (position == Position.LEFT) {
-                path.lineTo(right, arrowSourceY - arrowWidth);
-                path.lineTo(myRect.right, arrowTargetY);
-                path.lineTo(right, arrowSourceY + arrowWidth);
+                path.lineTo(right, arrowSourceY - arrowWidth)
+                path.lineTo(myRect.right, arrowTargetY)
+                path.lineTo(right, arrowSourceY + arrowWidth)
             }
-            path.lineTo(right, bottom - bottomRightDiameter / 2);
+            path.lineTo(right, bottom - bottomRightDiameter / 2)
 
-            path.quadTo(right, bottom, right - bottomRightDiameter / 2, bottom);
+            path.quadTo(right, bottom, right - bottomRightDiameter / 2, bottom)
+
             //RIGHT, BOTTOM
-
             if (position == Position.TOP) {
-                path.lineTo(arrowSourceX + arrowWidth, bottom);
-                path.lineTo(arrowTargetX, myRect.bottom);
-                path.lineTo(arrowSourceX - arrowWidth, bottom);
+                path.lineTo(arrowSourceX + arrowWidth, bottom)
+                path.lineTo(arrowTargetX, myRect.bottom)
+                path.lineTo(arrowSourceX - arrowWidth, bottom)
             }
-            path.lineTo(left + bottomLeftDiameter / 2, bottom);
+            path.lineTo(left + bottomLeftDiameter / 2, bottom)
 
-            path.quadTo(left, bottom, left, bottom - bottomLeftDiameter / 2);
+            path.quadTo(left, bottom, left, bottom - bottomLeftDiameter / 2)
+
             //LEFT, BOTTOM
-
             if (position == Position.RIGHT) {
-                path.lineTo(left, arrowSourceY + arrowWidth);
-                path.lineTo(myRect.left, arrowTargetY);
-                path.lineTo(left, arrowSourceY - arrowWidth);
+                path.lineTo(left, arrowSourceY + arrowWidth)
+                path.lineTo(myRect.left, arrowTargetY)
+                path.lineTo(left, arrowSourceY - arrowWidth)
             }
-            path.lineTo(left, top + topLeftDiameter / 2);
+            path.lineTo(left, top + topLeftDiameter / 2)
 
-            path.quadTo(left, top, left + topLeftDiameter / 2, top);
+            path.quadTo(left, top, left + topLeftDiameter / 2, top)
 
-            path.close();
+            path.close()
 
-            return path;
+            return path
         }
 
-        public boolean adjustSize(Rect rect, int screenWidth) {
+        fun adjustSize(rect: Rect, screenWidth: Int): Boolean {
+            val r = Rect()
+            getGlobalVisibleRect(r)
 
-            final Rect r = new Rect();
-            getGlobalVisibleRect(r);
-
-            boolean changed = false;
-            final ViewGroup.LayoutParams layoutParams = getLayoutParams();
-            if (position == Position.LEFT && getWidth() > rect.left) {
-                layoutParams.width = rect.left - MARGIN_SCREEN_BORDER_TOOLTIP - distanceWithView;
-                changed = true;
-            } else if (position == Position.RIGHT && rect.right + getWidth() > screenWidth) {
-                layoutParams.width = screenWidth - rect.right - MARGIN_SCREEN_BORDER_TOOLTIP - distanceWithView;
-                changed = true;
+            var changed = false
+            val layoutParams = getLayoutParams()
+            if (position == Position.LEFT && width > rect.left) {
+                layoutParams.width = rect.left - MARGIN_SCREEN_BORDER_TOOLTIP - distanceWithView
+                changed = true
+            } else if (position == Position.RIGHT && rect.right + width > screenWidth) {
+                layoutParams.width =
+                    screenWidth - rect.right - MARGIN_SCREEN_BORDER_TOOLTIP - distanceWithView
+                changed = true
             } else if (position == Position.TOP || position == Position.BOTTOM) {
-                int adjustedLeft = rect.left;
-                int adjustedRight = rect.right;
+                var adjustedLeft = rect.left
+                var adjustedRight = rect.right
 
-                if ((rect.centerX() + getWidth() / 2f) > screenWidth) {
-                    float diff = (rect.centerX() + getWidth() / 2f) - screenWidth;
+                if ((rect.centerX() + width / 2f) > screenWidth) {
+                    val diff = (rect.centerX() + width / 2f) - screenWidth
 
-                    adjustedLeft -= diff;
-                    adjustedRight -= diff;
+                    adjustedLeft = (adjustedLeft - diff).toInt()
+                    adjustedRight = (adjustedRight - diff).toInt()
 
-                    setAlign(ALIGN.CENTER);
-                    changed = true;
-                } else if ((rect.centerX() - getWidth() / 2f) < 0) {
-                    float diff = -(rect.centerX() - getWidth() / 2f);
+                    setAlign(ALIGN.CENTER)
+                    changed = true
+                } else if ((rect.centerX() - width / 2f) < 0) {
+                    val diff = -(rect.centerX() - width / 2f)
 
-                    adjustedLeft += diff;
-                    adjustedRight += diff;
+                    adjustedLeft = (adjustedLeft + diff).toInt()
+                    adjustedRight = (adjustedRight + diff).toInt()
 
-                    setAlign(ALIGN.CENTER);
-                    changed = true;
+                    setAlign(ALIGN.CENTER)
+                    changed = true
                 }
 
                 if (adjustedLeft < 0) {
-                    adjustedLeft = 0;
+                    adjustedLeft = 0
                 }
 
                 if (adjustedRight > screenWidth) {
-                    adjustedRight = screenWidth;
+                    adjustedRight = screenWidth
                 }
 
-                rect.left = adjustedLeft;
-                rect.right = adjustedRight;
+                rect.left = adjustedLeft
+                rect.right = adjustedRight
             }
 
-            setLayoutParams(layoutParams);
-            postInvalidate();
-            return changed;
+            setLayoutParams(layoutParams)
+            postInvalidate()
+            return changed
         }
 
-        private void onSetup(Rect myRect) {
-            setupPosition(myRect);
-            bubblePath = drawBubble(new RectF(0, 0, getWidth(), getHeight()), corner, corner, corner, corner);
-            startEnterAnimation();
+        private fun onSetup(myRect: Rect) {
+            setupPosition(myRect)
+            bubblePath = drawBubble(
+                RectF(0f, 0f, width.toFloat(), height.toFloat()),
+                corner.toFloat(),
+                corner.toFloat(),
+                corner.toFloat(),
+                corner.toFloat()
+            )
+            startEnterAnimation()
         }
 
-        public void setup(final Rect viewRect, int screenWidth) {
-            this.viewRect = new Rect(viewRect);
-            final Rect myRect = new Rect(viewRect);
+        fun setup(viewRect: Rect?, screenWidth: Int) {
+            this.viewRect = Rect(viewRect)
+            val myRect = Rect(viewRect)
 
-            final boolean changed = adjustSize(myRect, screenWidth);
+            val changed = adjustSize(myRect, screenWidth)
             if (!changed) {
-                onSetup(myRect);
+                onSetup(myRect)
             } else {
-                getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                    @Override
-                    public boolean onPreDraw() {
-                        onSetup(myRect);
-                        getViewTreeObserver().removeOnPreDrawListener(this);
-                        return false;
+                getViewTreeObserver().addOnPreDrawListener(object :
+                    ViewTreeObserver.OnPreDrawListener {
+                    override fun onPreDraw(): Boolean {
+                        onSetup(myRect)
+                        getViewTreeObserver().removeOnPreDrawListener(this)
+                        return false
                     }
-                });
+                })
             }
         }
 
-        public void removeNow() {
-            if (getParent() != null) {
-                final ViewGroup parent = ((ViewGroup) getParent());
-                parent.removeView(TooltipView.this);
+        fun removeNow() {
+            if (parent != null) {
+                val parent = (parent as ViewGroup)
+                parent.removeView(this@TooltipView)
             }
         }
 
-        public void closeNow() {
-            removeNow();
+        fun closeNow() {
+            removeNow()
         }
 
-        public void setDistanceWithView(int distanceWithView) {
-            this.distanceWithView = distanceWithView;
+        fun setDistanceWithView(distanceWithView: Int) {
+            this.distanceWithView = distanceWithView
         }
 
-        public void setBorderPaint(Paint borderPaint) {
-            this.borderPaint = borderPaint;
-            postInvalidate();
+        fun setBorderPaint(borderPaint: Paint?) {
+            this.borderPaint = borderPaint
+            postInvalidate()
+        }
+
+        companion object {
+            private const val MARGIN_SCREEN_BORDER_TOOLTIP = 30
         }
     }
 
-    public static class MyContext {
-        private Fragment fragment;
-        private Context context;
-        private Activity activity;
+    class MyContext {
+        private var fragment: Fragment? = null
+        private var context: Context? = null
+        private var activity: Activity? = null
 
-        public MyContext(Activity activity) {
-            this.activity = activity;
+        constructor(activity: Activity?) {
+            this.activity = activity
         }
 
-        public MyContext(Fragment fragment) {
-            this.fragment = fragment;
+        constructor(fragment: Fragment) {
+            this.fragment = fragment
         }
 
-        public MyContext(Context context) {
-            this.context = context;
+        constructor(context: Context?) {
+            this.context = context
         }
 
-        public Context getContext() {
-            if (activity != null) {
-                return activity;
+        fun getContext(): Context? {
+            return if (activity != null) {
+                activity
             } else {
-                return ((Context) fragment.getActivity());
+                (fragment!!.activity as Context)
             }
         }
 
-        public Activity getActivity() {
+        fun getActivity(): Activity? {
             if (activity != null) {
-                return activity;
+                return activity
             } else {
-                return fragment.getActivity();
+                return fragment!!.activity
             }
         }
 
 
-        public Window getWindow() {
-            if (activity != null) {
-                return activity.getWindow();
-            } else {
-                if (fragment instanceof DialogFragment) {
-                    return ((DialogFragment) fragment).getDialog().getWindow();
+        val window: Window?
+            get() {
+                if (activity != null) {
+                    return activity!!.window
+                } else {
+                    if (fragment is DialogFragment) {
+                        return (fragment as DialogFragment).dialog.window
+                    }
+                    return fragment!!.activity.window
                 }
-                return fragment.getActivity().getWindow();
             }
+    }
+
+    companion object {
+        @JvmStatic
+        fun build(context: Context?): ShowcaseTooltip {
+            return ShowcaseTooltip(context)
+        }
+
+        private fun getActivityContext(context: Context?): Activity? {
+            var context = context
+            while (context is ContextWrapper) {
+                if (context is Activity) {
+                    return context
+                }
+                context = context.baseContext
+            }
+            return null
         }
     }
 }

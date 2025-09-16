@@ -1,7 +1,7 @@
-package uk.co.deanwild.materialshowcaseview;
+package uk.co.deanwild.materialshowcaseview
 
 
-public interface IShowcaseListener {
-    void onShowcaseDisplayed(MaterialShowcaseView showcaseView);
-    void onShowcaseDismissed(MaterialShowcaseView showcaseView);
+interface IShowcaseListener {
+    fun onShowcaseDisplayed(showcaseView: MaterialShowcaseView)
+    fun onShowcaseDismissed(showcaseView: MaterialShowcaseView)
 }

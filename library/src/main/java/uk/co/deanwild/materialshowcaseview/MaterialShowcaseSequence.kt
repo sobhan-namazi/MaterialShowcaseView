@@ -1,212 +1,201 @@
-package uk.co.deanwild.materialshowcaseview;
+package uk.co.deanwild.materialshowcaseview
 
-import android.app.Activity;
-import android.view.View;
+import android.app.Activity
+import android.view.View
+import java.util.LinkedList
+import java.util.Queue
 
-import java.util.LinkedList;
-import java.util.Queue;
+class MaterialShowcaseSequence(var mActivity: Activity) : IDetachedListener {
+    var mPrefsManager: PrefsManager? = null
+    var mShowcaseQueue: Queue<MaterialShowcaseView> = LinkedList()
+    private var mSingleUse = false
+    private var mConfig: ShowcaseConfig? = null
+    private var mSequencePosition = 0
 
+    private var mOnItemShownListener: OnSequenceItemShownListener? = null
+    private var mOnItemDismissedListener: OnSequenceItemDismissedListener? = null
 
-public class MaterialShowcaseSequence implements IDetachedListener {
-
-    PrefsManager mPrefsManager;
-    Queue<MaterialShowcaseView> mShowcaseQueue;
-    private boolean mSingleUse = false;
-    Activity mActivity;
-    private ShowcaseConfig mConfig;
-    private int mSequencePosition = 0;
-
-    private OnSequenceItemShownListener mOnItemShownListener = null;
-    private OnSequenceItemDismissedListener mOnItemDismissedListener = null;
-
-    public MaterialShowcaseSequence(Activity activity) {
-        mActivity = activity;
-        mShowcaseQueue = new LinkedList<>();
+    constructor(activity: Activity, sequenceID: String?) : this(activity) {
+        this.singleUse(sequenceID)
     }
 
-    public MaterialShowcaseSequence(Activity activity, String sequenceID) {
-        this(activity);
-        this.singleUse(sequenceID);
+    fun addSequenceItem(
+        targetView: View?,
+        content: String?,
+        dismissText: String?
+    ): MaterialShowcaseSequence {
+        addSequenceItem(targetView, "", content, dismissText)
+        return this
     }
 
-    public MaterialShowcaseSequence addSequenceItem(View targetView, String content, String dismissText) {
-        addSequenceItem(targetView, "", content, dismissText);
-        return this;
+    fun addSequenceItem(
+        targetView: View?,
+        title: String?,
+        content: String?,
+        dismissText: String?
+    ): MaterialShowcaseSequence {
+        val sequenceItem = MaterialShowcaseView.Builder(mActivity)
+            .setTarget(targetView)
+            .setTitleText(title)
+            .setDismissText(dismissText)
+            .setContentText(content)
+            .setSequence(true)
+            .build()
+
+        mConfig?.let { sequenceItem.setConfig(it) }
+
+        mShowcaseQueue.add(sequenceItem)
+        return this
     }
 
-    public MaterialShowcaseSequence addSequenceItem(View targetView, String title, String content, String dismissText) {
+    fun addSequenceItem(sequenceItem: MaterialShowcaseView): MaterialShowcaseSequence {
+        mConfig?.let { sequenceItem.setConfig(it) }
 
-        MaterialShowcaseView sequenceItem = new MaterialShowcaseView.Builder(mActivity)
-                .setTarget(targetView)
-                .setTitleText(title)
-                .setDismissText(dismissText)
-                .setContentText(content)
-                .setSequence(true)
-                .build();
+        mShowcaseQueue.add(sequenceItem)
+        return this
+    }
 
-        if (mConfig != null) {
-            sequenceItem.setConfig(mConfig);
+    fun singleUse(sequenceID: String?): MaterialShowcaseSequence {
+        mSingleUse = true
+        mPrefsManager = PrefsManager(mActivity, sequenceID)
+        return this
+    }
+
+    fun setOnItemShownListener(listener: OnSequenceItemShownListener?) {
+        this.mOnItemShownListener = listener
+    }
+
+    fun setOnItemDismissedListener(listener: OnSequenceItemDismissedListener?) {
+        this.mOnItemDismissedListener = listener
+    }
+
+    fun hasFired(): Boolean {
+        if (mPrefsManager!!.sequenceStatus == PrefsManager.SEQUENCE_FINISHED) {
+            return true
         }
 
-        mShowcaseQueue.add(sequenceItem);
-        return this;
+        return false
     }
 
-    public MaterialShowcaseSequence addSequenceItem(MaterialShowcaseView sequenceItem) {
-
-        if (mConfig != null) {
-            sequenceItem.setConfig(mConfig);
-        }
-
-        mShowcaseQueue.add(sequenceItem);
-        return this;
-    }
-
-    public MaterialShowcaseSequence singleUse(String sequenceID) {
-        mSingleUse = true;
-        mPrefsManager = new PrefsManager(mActivity, sequenceID);
-        return this;
-    }
-
-    public void setOnItemShownListener(OnSequenceItemShownListener listener) {
-        this.mOnItemShownListener = listener;
-    }
-
-    public void setOnItemDismissedListener(OnSequenceItemDismissedListener listener) {
-        this.mOnItemDismissedListener = listener;
-    }
-
-    public boolean hasFired() {
-
-        if (mPrefsManager.getSequenceStatus() == PrefsManager.SEQUENCE_FINISHED) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public void start() {
-
+    fun start() {
         /**
          * Check if we've already shot our bolt and bail out if so         *
          */
+
         if (mSingleUse) {
             if (hasFired()) {
-                return;
+                return
             }
 
             /**
              * See if we have started this sequence before, if so then skip to the point we reached before
              * instead of showing the user everything from the start
              */
-            mSequencePosition = mPrefsManager.getSequenceStatus();
+            mSequencePosition = mPrefsManager!!.sequenceStatus
 
             if (mSequencePosition > 0) {
-                for (int i = 0; i < mSequencePosition; i++) {
-                    mShowcaseQueue.poll();
+                for (i in 0 until mSequencePosition) {
+                    mShowcaseQueue.poll()
                 }
             }
         }
 
 
         // do start
-        if (mShowcaseQueue.size() > 0)
-            showNextItem();
+        if (mShowcaseQueue.isNotEmpty()) showNextItem()
     }
 
-    private void showNextItem() {
-
-        if (mShowcaseQueue.size() > 0 && !mActivity.isFinishing()) {
-            MaterialShowcaseView sequenceItem = mShowcaseQueue.remove();
-            sequenceItem.setDetachedListener(this);
-            sequenceItem.show(mActivity);
+    private fun showNextItem() {
+        if (mShowcaseQueue.isNotEmpty() && !mActivity.isFinishing) {
+            val sequenceItem = mShowcaseQueue.remove()
+            sequenceItem.setDetachedListener(this)
+            sequenceItem.show(mActivity)
             if (mOnItemShownListener != null) {
-                mOnItemShownListener.onShow(sequenceItem, mSequencePosition);
+                mOnItemShownListener!!.onShow(sequenceItem, mSequencePosition)
             }
         } else {
             /**
              * We've reached the end of the sequence, save the fired state
              */
             if (mSingleUse) {
-                mPrefsManager.setFired();
+                mPrefsManager!!.setFired()
             }
         }
     }
 
-    private void skipTutorial() {
+    private fun skipTutorial() {
+        mShowcaseQueue.clear()
 
-        mShowcaseQueue.clear();
-
-        if (mShowcaseQueue.size() > 0 && !mActivity.isFinishing()) {
-            MaterialShowcaseView sequenceItem = mShowcaseQueue.remove();
-            sequenceItem.setDetachedListener(this);
-            sequenceItem.show(mActivity);
+        if (mShowcaseQueue.size > 0 && !mActivity.isFinishing()) {
+            val sequenceItem = mShowcaseQueue.remove()
+            sequenceItem.setDetachedListener(this)
+            sequenceItem.show(mActivity)
             if (mOnItemShownListener != null) {
-                mOnItemShownListener.onShow(sequenceItem, mSequencePosition);
+                mOnItemShownListener!!.onShow(sequenceItem, mSequencePosition)
             }
         } else {
             /**
              * We've reached the end of the sequence, save the fired state
              */
             if (mSingleUse) {
-                mPrefsManager.setFired();
+                mPrefsManager!!.setFired()
             }
         }
     }
 
 
-    @Override
-    public void onShowcaseDetached(MaterialShowcaseView showcaseView, boolean wasDismissed, boolean wasSkipped) {
-
-        showcaseView.setDetachedListener(null);
+    override fun onShowcaseDetached(
+        showcaseView: MaterialShowcaseView,
+        wasDismissed: Boolean,
+        wasSkipped: Boolean
+    ) {
+        showcaseView.setDetachedListener(null)
 
         /**
          * We're only interested if the showcase was purposefully dismissed
          */
         if (wasDismissed) {
-
             if (mOnItemDismissedListener != null) {
-                mOnItemDismissedListener.onDismiss(showcaseView, mSequencePosition);
+                mOnItemDismissedListener!!.onDismiss(showcaseView, mSequencePosition)
             }
 
             /**
              * If so, update the prefsManager so we can potentially resume this sequence in the future
              */
             if (mPrefsManager != null) {
-                mSequencePosition++;
-                mPrefsManager.setSequenceStatus(mSequencePosition);
+                mSequencePosition++
+                mPrefsManager!!.sequenceStatus = mSequencePosition
             }
 
-            showNextItem();
+            showNextItem()
         }
 
-        if(wasSkipped){
+        if (wasSkipped) {
             if (mOnItemDismissedListener != null) {
-                mOnItemDismissedListener.onDismiss(showcaseView, mSequencePosition);
+                mOnItemDismissedListener!!.onDismiss(showcaseView, mSequencePosition)
             }
 
             /**
              * If so, update the prefsManager so we can potentially resume this sequence in the future
              */
             if (mPrefsManager != null) {
-                mSequencePosition++;
-                mPrefsManager.setSequenceStatus(mSequencePosition);
+                mSequencePosition++
+                mPrefsManager!!.sequenceStatus = mSequencePosition
             }
 
-            skipTutorial();
+            skipTutorial()
         }
     }
 
-    public void setConfig(ShowcaseConfig config) {
-        this.mConfig = config;
+    fun setConfig(config: ShowcaseConfig?) {
+        this.mConfig = config
     }
 
-    public interface OnSequenceItemShownListener {
-        void onShow(MaterialShowcaseView itemView, int position);
+    interface OnSequenceItemShownListener {
+        fun onShow(itemView: MaterialShowcaseView?, position: Int)
     }
 
-    public interface OnSequenceItemDismissedListener {
-        void onDismiss(MaterialShowcaseView itemView, int position);
+    interface OnSequenceItemDismissedListener {
+        fun onDismiss(itemView: MaterialShowcaseView?, position: Int)
     }
-
 }

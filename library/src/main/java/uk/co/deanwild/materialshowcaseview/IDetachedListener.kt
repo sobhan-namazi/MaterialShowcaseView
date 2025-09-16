@@ -1,6 +1,10 @@
-package uk.co.deanwild.materialshowcaseview;
+package uk.co.deanwild.materialshowcaseview
 
 
-public interface IDetachedListener {
-    void onShowcaseDetached(MaterialShowcaseView showcaseView, boolean wasDismissed, boolean wasSkipped);
+interface IDetachedListener {
+    fun onShowcaseDetached(
+        showcaseView: MaterialShowcaseView,
+        wasDismissed: Boolean,
+        wasSkipped: Boolean
+    )
 }

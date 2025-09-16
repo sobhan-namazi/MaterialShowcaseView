@@ -1,96 +1,83 @@
-package uk.co.deanwild.materialshowcaseview.shape;
+package uk.co.deanwild.materialshowcaseview.shape
+
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import uk.co.deanwild.materialshowcaseview.target.Target
 
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
+class RectangleShape : Shape {
+    private var fullWidth = false
 
-import uk.co.deanwild.materialshowcaseview.target.Target;
+    var computedWidth = 0
+    var computedHeight = 0
 
-public class RectangleShape implements Shape {
+    var radius = 0f
+    var isAdjustToTarget: Boolean = true
 
-    private boolean fullWidth = false;
+    private lateinit var rect: Rect
+    private var padding = 0
 
-    private int width = 0;
-    private int height = 0;
-    private boolean adjustToTarget = true;
-
-    private Rect rect;
-    private int padding;
-
-    public RectangleShape(int width, int height) {
-        this.width = width;
-        this.height = height;
-        init();
+    constructor(width: Int, height: Int, radius: Float = 0f) {
+        this.computedWidth = width
+        this.computedHeight = height
+        this.radius = radius
+        init()
     }
 
-    public RectangleShape(Rect bounds) {
-        this(bounds, false);
+    @JvmOverloads
+    constructor(bounds: Rect, fullWidth: Boolean = false, radius: Float = 0f) {
+        this.fullWidth = fullWidth
+        computedHeight = bounds.height()
+        if (fullWidth) computedHeight = Int.Companion.MAX_VALUE
+        else computedHeight = bounds.width()
+        this.radius = radius
+        init()
     }
 
-    public RectangleShape(Rect bounds, boolean fullWidth) {
-        this.fullWidth = fullWidth;
-        height = bounds.height();
-        if (fullWidth)
-            width = Integer.MAX_VALUE;
-        else width = bounds.width();
-        init();
+    private fun init() {
+        rect = Rect(-computedWidth / 2, -computedHeight / 2, computedWidth / 2, computedHeight / 2)
     }
 
-    public boolean isAdjustToTarget() {
-        return adjustToTarget;
-    }
-
-    public void setAdjustToTarget(boolean adjustToTarget) {
-        this.adjustToTarget = adjustToTarget;
-    }
-
-    private void init() {
-        rect = new Rect(-width / 2, -height / 2, width / 2, height / 2);
-    }
-
-    @Override
-    public void draw(Canvas canvas, Paint paint, int x, int y) {
-        if (!rect.isEmpty()) {
-            canvas.drawRect(
-                    rect.left + x - padding,
-                    rect.top + y - padding,
-                    rect.right + x + padding,
-                    rect.bottom + y + padding,
-                    paint
-            );
+    override fun draw(canvas: Canvas, paint: Paint, x: Int, y: Int) {
+        if (!rect.isEmpty) {
+            canvas.drawRoundRect(
+                (rect.left + x - padding).toFloat(),
+                (rect.top + y - padding).toFloat(),
+                (rect.right + x + padding).toFloat(),
+                (rect.bottom + y + padding).toFloat(),
+                radius, radius,
+                paint
+            )
         }
     }
 
-    @Override
-    public void updateTarget(Target target) {
-        if (adjustToTarget) {
-            Rect bounds = target.getBounds();
-            height = bounds.height();
-            if (fullWidth)
-                width = Integer.MAX_VALUE;
-            else width = bounds.width();
-            init();
+    override fun updateTarget(target: Target) {
+        if (this.isAdjustToTarget) {
+            val bounds = target.bounds
+            computedHeight = bounds.height()
+            computedWidth = if (fullWidth) Int.Companion.MAX_VALUE
+            else bounds.width()
+            init()
         }
     }
 
-    @Override
-    public int getTotalRadius() {
-        return (height / 2) + padding;
+    override val totalRadius: Int
+        get() {
+            return (computedHeight / 2) + padding
+        }
+
+    override fun setPadding(padding: Int) {
+        this.padding = padding
     }
 
-    @Override
-    public void setPadding(int padding) {
-        this.padding = padding;
-    }
+    override val width: Int
+        get() {
+            return computedWidth
+        }
 
-    @Override
-    public int getWidth() {
-        return width;
-    }
-
-    @Override
-    public int getHeight() {
-        return height;
-    }
+    override val height: Int
+        get() {
+            return computedHeight
+        }
 }

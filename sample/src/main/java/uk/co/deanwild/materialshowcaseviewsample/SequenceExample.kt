@@ -1,100 +1,90 @@
-package uk.co.deanwild.materialshowcaseviewsample;
+package uk.co.deanwild.materialshowcaseviewsample
 
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
+import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import android.view.View
+import android.widget.Button
+import android.widget.Toast
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence.OnSequenceItemShownListener
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView.Companion.resetSingleUse
+import uk.co.deanwild.materialshowcaseview.ShowcaseConfig
 
-import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence;
-import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
-import uk.co.deanwild.materialshowcaseview.ShowcaseConfig;
+class SequenceExample : AppCompatActivity(), View.OnClickListener {
+    private var mButtonOne: Button? = null
+    private var mButtonTwo: Button? = null
+    private var mButtonThree: Button? = null
 
+    private var mButtonReset: Button? = null
 
-public class SequenceExample extends AppCompatActivity implements View.OnClickListener {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_sequence_example)
+        mButtonOne = findViewById(R.id.btn_one)
+        mButtonOne!!.setOnClickListener(this)
 
-    private Button mButtonOne;
-    private Button mButtonTwo;
-    private Button mButtonThree;
+        mButtonTwo = findViewById(R.id.btn_two)
+        mButtonTwo!!.setOnClickListener(this)
 
-    private Button mButtonReset;
+        mButtonThree = findViewById(R.id.btn_three)
+        mButtonThree!!.setOnClickListener(this)
 
-    private static final String SHOWCASE_ID = "sequence example";
+        mButtonReset = findViewById(R.id.btn_reset)
+        mButtonReset!!.setOnClickListener(this)
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_sequence_example);
-        mButtonOne = findViewById(R.id.btn_one);
-        mButtonOne.setOnClickListener(this);
-
-        mButtonTwo = findViewById(R.id.btn_two);
-        mButtonTwo.setOnClickListener(this);
-
-        mButtonThree = findViewById(R.id.btn_three);
-        mButtonThree.setOnClickListener(this);
-
-        mButtonReset = findViewById(R.id.btn_reset);
-        mButtonReset.setOnClickListener(this);
-
-        presentShowcaseSequence(); // one second delay
+        presentShowcaseSequence() // one second delay
     }
 
-    @Override
-    public void onClick(View v) {
-
-        if (v.getId() == R.id.btn_one || v.getId() == R.id.btn_two || v.getId() == R.id.btn_three) {
-
-            presentShowcaseSequence();
-
-        } else if (v.getId() == R.id.btn_reset) {
-
-            MaterialShowcaseView.resetSingleUse(this, SHOWCASE_ID);
-            Toast.makeText(this, "Showcase reset", Toast.LENGTH_SHORT).show();
+    override fun onClick(v: View) {
+        if (v.id == R.id.btn_one || v.id == R.id.btn_two || v.id == R.id.btn_three) {
+            presentShowcaseSequence()
+        } else if (v.id == R.id.btn_reset) {
+            resetSingleUse(this, SHOWCASE_ID)
+            Toast.makeText(this, "Showcase reset", Toast.LENGTH_SHORT).show()
         }
-
     }
 
-    private void presentShowcaseSequence() {
+    private fun presentShowcaseSequence() {
+        val config = ShowcaseConfig()
+        config.delay = 500 // half second between each showcase view
 
-        ShowcaseConfig config = new ShowcaseConfig();
-        config.setDelay(500); // half second between each showcase view
+        val sequence = MaterialShowcaseSequence(this, SHOWCASE_ID)
 
-        MaterialShowcaseSequence sequence = new MaterialShowcaseSequence(this, SHOWCASE_ID);
-
-        sequence.setOnItemShownListener(new MaterialShowcaseSequence.OnSequenceItemShownListener() {
-            @Override
-            public void onShow(MaterialShowcaseView itemView, int position) {
-                Toast.makeText(itemView.getContext(), "Item #" + position, Toast.LENGTH_SHORT).show();
+        sequence.setOnItemShownListener(object : OnSequenceItemShownListener {
+            override fun onShow(itemView: MaterialShowcaseView?, position: Int) {
+                Toast.makeText(itemView?.context, "Item #$position", Toast.LENGTH_SHORT)
+                    .show()
             }
-        });
+        })
 
-        sequence.setConfig(config);
+        sequence.setConfig(config)
 
-        sequence.addSequenceItem(mButtonOne, "This is button one", "GOT IT");
-
-        sequence.addSequenceItem(
-                new MaterialShowcaseView.Builder(this)
-                        .setSkipText("SKIP")
-                        .setTarget(mButtonTwo)
-                        .setDismissText("GOT IT")
-                        .setContentText("This is button two")
-                        .withRectangleShape(true)
-                        .build()
-        );
+        sequence.addSequenceItem(mButtonOne, "This is button one", "GOT IT")
 
         sequence.addSequenceItem(
-                new MaterialShowcaseView.Builder(this)
-                        .setTarget(mButtonThree)
-                        .setDismissText("GOT IT")
-                        .setContentText("This is button three")
-                        .withRectangleShape()
-                        .build()
-        );
+            MaterialShowcaseView.Builder(this)
+                .setSkipText("SKIP")
+                .setTarget(mButtonTwo)
+                .setDismissText("GOT IT")
+                .setContentText("This is button two")
+                .withRectangleShape(true)
+                .build()
+        )
 
-        sequence.start();
+        sequence.addSequenceItem(
+            MaterialShowcaseView.Builder(this)
+                .setTarget(mButtonThree)
+                .setDismissText("GOT IT")
+                .setContentText("This is button three")
+                .withRectangleShape()
+                .build()
+        )
 
+        sequence.start()
     }
 
+    companion object {
+        private const val SHOWCASE_ID = "sequence example"
+    }
 }

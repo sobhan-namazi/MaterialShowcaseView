@@ -1,45 +1,39 @@
-package uk.co.deanwild.materialshowcaseview.target;
+package uk.co.deanwild.materialshowcaseview.target
 
-import android.app.Activity;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.view.View;
+import android.app.Activity
+import android.graphics.Point
+import android.graphics.Rect
+import android.view.View
 
+class ViewTarget : Target {
+    val view: View?
 
-public class ViewTarget implements Target {
-
-    private final View mView;
-
-    public ViewTarget(View view) {
-        mView = view;
+    constructor(view: View?) {
+        this.view = view
     }
 
-    public ViewTarget(int viewId, Activity activity) {
-        mView = activity.findViewById(viewId);
+    constructor(viewId: Int, activity: Activity) {
+        this.view = activity.findViewById<View>(viewId)
     }
 
-    @Override
-    public Point getPoint() {
-        int[] location = new int[2];
-        mView.getLocationInWindow(location);
-        int x = location[0] + mView.getWidth() / 2;
-        int y = location[1] + mView.getHeight() / 2;
-        return new Point(x, y);
-    }
+    override val point: Point
+        get() {
+            val location = IntArray(2)
+            view?.getLocationInWindow(location)
+            val x = location[0] + (view?.width ?: 0) / 2
+            val y = location[1] + (view?.height ?: 0) / 2
+            return Point(x, y)
+        }
 
-    @Override
-    public Rect getBounds() {
-        int[] location = new int[2];
-        mView.getLocationInWindow(location);
-        return new Rect(
+    override val bounds: Rect
+        get() {
+            val location = IntArray(2)
+            view?.getLocationInWindow(location)
+            return Rect(
                 location[0],
                 location[1],
-                location[0] + mView.getMeasuredWidth(),
-                location[1] + mView.getMeasuredHeight()
-        );
-    }
-
-    public View getView() {
-        return mView;
-    }
+                location[0] + (view?.measuredWidth ?: 0),
+                location[1] + (view?.measuredHeight ?: 0)
+            )
+        }
 }

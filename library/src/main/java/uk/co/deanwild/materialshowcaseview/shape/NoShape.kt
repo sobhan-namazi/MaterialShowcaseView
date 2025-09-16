@@ -1,42 +1,28 @@
-package uk.co.deanwild.materialshowcaseview.shape;
+package uk.co.deanwild.materialshowcaseview.shape
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
-
-import uk.co.deanwild.materialshowcaseview.target.Target;
+import android.graphics.Canvas
+import android.graphics.Paint
+import uk.co.deanwild.materialshowcaseview.target.Target
 
 /**
  * A Shape implementation that draws nothing.
  */
-public class NoShape implements Shape {
-
-    @Override
-    public void updateTarget(Target target) {
+class NoShape : Shape {
+    override fun updateTarget(target: Target) {
         // do nothing
     }
 
-    @Override
-    public int getTotalRadius() {
-        return 0;
-    }
+    override val totalRadius: Int = 0
 
-    @Override
-    public void setPadding(int padding) {
+    override fun setPadding(padding: Int) {
         // do nothing
     }
 
-    @Override
-    public void draw(Canvas canvas, Paint paint, int x, int y) {
+    override fun draw(canvas: Canvas, paint: Paint, x: Int, y: Int) {
         // do nothing
     }
 
-    @Override
-    public int getWidth() {
-        return 0;
-    }
+    override val width: Int = 0
 
-    @Override
-    public int getHeight() {
-        return 0;
-    }
+    override val height: Int = 0
 }

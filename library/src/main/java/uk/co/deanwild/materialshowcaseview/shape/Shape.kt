@@ -1,38 +1,36 @@
-package uk.co.deanwild.materialshowcaseview.shape;
+package uk.co.deanwild.materialshowcaseview.shape
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
-
-import uk.co.deanwild.materialshowcaseview.target.Target;
+import android.graphics.Canvas
+import android.graphics.Paint
+import uk.co.deanwild.materialshowcaseview.target.Target
 
 /**
  * Specifies a shape of the target (e.g circle, rectangle).
  * Implementations of this interface will be responsible to draw the shape
  * at specified center point (x, y).
  */
-public interface Shape {
-
+interface Shape {
     /**
      * Draw shape on the canvas with the center at (x, y) using Paint object provided.
      */
-    void draw(Canvas canvas, Paint paint, int x, int y);
+    fun draw(canvas: Canvas, paint: Paint, x: Int, y: Int)
 
     /**
      * Get width of the shape.
      */
-    int getWidth();
+    val width: Int
 
     /**
      * Get height of the shape.
      */
-    int getHeight();
+    val height: Int
 
     /**
      * Update shape bounds if necessary
      */
-    void updateTarget(Target target);
+    fun updateTarget(target: Target)
 
-    int getTotalRadius();
+    val totalRadius: Int
 
-    void setPadding(int padding);
+    fun setPadding(padding: Int)
 }

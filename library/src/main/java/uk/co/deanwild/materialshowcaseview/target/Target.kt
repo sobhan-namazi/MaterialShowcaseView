@@ -1,24 +1,25 @@
-package uk.co.deanwild.materialshowcaseview.target;
+package uk.co.deanwild.materialshowcaseview.target
 
-import android.graphics.Point;
-import android.graphics.Rect;
+import android.graphics.Point
+import android.graphics.Rect
 
+interface Target {
+    val point: Point
 
-public interface Target {
-    Target NONE = new Target() {
-        @Override
-        public Point getPoint() {
-            return new Point(1000000, 1000000);
+    val bounds: Rect
+
+    companion object {
+        val NONE: Target = object : Target {
+            override val point: Point
+                get() {
+                    return Point(1000000, 1000000)
+                }
+
+            override val bounds: Rect
+                get() {
+                    val p = point
+                    return Rect(p.x - 190, p.y - 190, p.x + 190, p.y + 190)
+                }
         }
-
-        @Override
-        public Rect getBounds() {
-            Point p = getPoint();
-            return new Rect(p.x - 190, p.y - 190, p.x + 190, p.y + 190);
-        }
-    };
-
-    Point getPoint();
-
-    Rect getBounds();
+    }
 }

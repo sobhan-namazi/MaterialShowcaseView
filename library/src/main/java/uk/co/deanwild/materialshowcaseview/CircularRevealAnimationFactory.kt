@@ -1,95 +1,91 @@
-package uk.co.deanwild.materialshowcaseview;
+package uk.co.deanwild.materialshowcaseview
 
-import android.animation.Animator;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
-import android.annotation.TargetApi;
-import android.graphics.Point;
-import android.os.Build;
-import android.view.View;
-import android.view.ViewAnimationUtils;
-import android.view.animation.AccelerateDecelerateInterpolator;
+import android.animation.Animator
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.annotation.TargetApi
+import android.graphics.Point
+import android.os.Build
+import android.view.View
+import android.view.ViewAnimationUtils
+import android.view.animation.AccelerateDecelerateInterpolator
+import uk.co.deanwild.materialshowcaseview.IAnimationFactory.AnimationEndListener
+import uk.co.deanwild.materialshowcaseview.IAnimationFactory.AnimationStartListener
 
+class CircularRevealAnimationFactory : IAnimationFactory {
+    private val interpolator: AccelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
-public class CircularRevealAnimationFactory implements IAnimationFactory {
+    override fun animateInView(
+        target: View,
+        point: Point,
+        duration: Long,
+        listener: AnimationStartListener
+    ) {
+        val animator = ViewAnimationUtils.createCircularReveal(
+            target, point.x, point.y, 0f,
+            (if (target.width > target.height) target.width else target.height).toFloat()
+        )
+        animator.setDuration(duration).addListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(animation: Animator?) {
+                listener.onAnimationStart()
+            }
 
-    private static final String ALPHA = "alpha";
-    private static final float INVISIBLE = 0f;
-    private static final float VISIBLE = 1f;
+            override fun onAnimationEnd(animation: Animator?) {
+            }
 
-    private final AccelerateDecelerateInterpolator interpolator;
+            override fun onAnimationCancel(animation: Animator?) {
+            }
 
-    public CircularRevealAnimationFactory() {
-        interpolator = new AccelerateDecelerateInterpolator();
+            override fun onAnimationRepeat(animation: Animator?) {
+            }
+        })
+
+        animator.start()
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    @Override
-    public void animateInView(View target, Point point, long duration, final AnimationStartListener listener) {
-        Animator animator = ViewAnimationUtils.createCircularReveal(target, point.x, point.y, 0,
-                target.getWidth() > target.getHeight() ? target.getWidth() : target.getHeight());
-        animator.setDuration(duration).addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-                listener.onAnimationStart();
+    override fun animateOutView(
+        target: View,
+        point: Point,
+        duration: Long,
+        listener: AnimationEndListener
+    ) {
+        val animator = ViewAnimationUtils.createCircularReveal(
+            target,
+            point.x,
+            point.y,
+            (if (target.width > target.height) target.width else target.height).toFloat(),
+            0f
+        )
+        animator.setDuration(duration).addListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(animation: Animator?) {
             }
 
-            @Override
-            public void onAnimationEnd(Animator animation) {
-
+            override fun onAnimationEnd(animation: Animator?) {
+                listener.onAnimationEnd()
             }
 
-            @Override
-            public void onAnimationCancel(Animator animation) {
-
+            override fun onAnimationCancel(animation: Animator?) {
             }
 
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
+            override fun onAnimationRepeat(animation: Animator?) {
             }
-        });
+        })
 
-        animator.start();
+        animator.start()
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    @Override
-    public void animateOutView(View target, Point point, long duration, final AnimationEndListener listener) {
-        Animator animator = ViewAnimationUtils.createCircularReveal(target, point.x, point.y,
-                target.getWidth() > target.getHeight() ? target.getWidth() : target.getHeight(), 0);
-        animator.setDuration(duration).addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                listener.onAnimationEnd();
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
-            }
-        });
-
-        animator.start();
+    override fun animateTargetToPoint(showcaseView: MaterialShowcaseView, point: Point) {
+        val set = AnimatorSet()
+        val xAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseX", point.x)
+        val yAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseY", point.y)
+        set.playTogether(xAnimator, yAnimator)
+        set.interpolator = interpolator
+        set.start()
     }
 
-    @Override
-    public void animateTargetToPoint(MaterialShowcaseView showcaseView, Point point) {
-        AnimatorSet set = new AnimatorSet();
-        ObjectAnimator xAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseX", point.x);
-        ObjectAnimator yAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseY", point.y);
-        set.playTogether(xAnimator, yAnimator);
-        set.setInterpolator(interpolator);
-        set.start();
+    companion object {
+        private const val ALPHA = "alpha"
+        private const val INVISIBLE = 0f
+        private const val VISIBLE = 1f
     }
 }

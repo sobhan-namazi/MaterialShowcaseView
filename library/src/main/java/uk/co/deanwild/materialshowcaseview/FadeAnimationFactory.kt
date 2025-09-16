@@ -1,83 +1,77 @@
-package uk.co.deanwild.materialshowcaseview;
+package uk.co.deanwild.materialshowcaseview
 
-import android.animation.Animator;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
-import android.annotation.TargetApi;
-import android.graphics.Point;
-import android.os.Build;
-import android.view.View;
-import android.view.ViewAnimationUtils;
-import android.view.animation.AccelerateDecelerateInterpolator;
+import android.animation.Animator
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.graphics.Point
+import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
+import uk.co.deanwild.materialshowcaseview.IAnimationFactory.AnimationEndListener
+import uk.co.deanwild.materialshowcaseview.IAnimationFactory.AnimationStartListener
 
+class FadeAnimationFactory : IAnimationFactory {
+    private val interpolator: AccelerateDecelerateInterpolator = AccelerateDecelerateInterpolator()
 
-public class FadeAnimationFactory implements IAnimationFactory{
+    override fun animateInView(
+        target: View,
+        point: Point,
+        duration: Long,
+        listener: AnimationStartListener
+    ) {
+        val oa: ObjectAnimator = ObjectAnimator.ofFloat(target, ALPHA, INVISIBLE, VISIBLE)
+        oa.setDuration(duration).addListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(animator: Animator?) {
+                listener.onAnimationStart()
+            }
 
-    private static final String ALPHA = "alpha";
-    private static final float INVISIBLE = 0f;
-    private static final float VISIBLE = 1f;
+            override fun onAnimationEnd(animator: Animator?) {
+            }
 
-    private final AccelerateDecelerateInterpolator interpolator;
+            override fun onAnimationCancel(animator: Animator?) {
+            }
 
-    public FadeAnimationFactory() {
-        interpolator = new AccelerateDecelerateInterpolator();
+            override fun onAnimationRepeat(animator: Animator?) {
+            }
+        })
+        oa.start()
     }
 
-    @Override
-    public void animateInView(View target, Point point, long duration, final AnimationStartListener listener) {
-        ObjectAnimator oa = ObjectAnimator.ofFloat(target, ALPHA, INVISIBLE, VISIBLE);
-        oa.setDuration(duration).addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-                listener.onAnimationStart();
+    override fun animateOutView(
+        target: View,
+        point: Point,
+        duration: Long,
+        listener: AnimationEndListener
+    ) {
+        val oa = ObjectAnimator.ofFloat(target, ALPHA, INVISIBLE)
+        oa.setDuration(duration).addListener(object : Animator.AnimatorListener {
+            override fun onAnimationStart(animator: Animator?) {
             }
 
-            @Override
-            public void onAnimationEnd(Animator animator) {
+            override fun onAnimationEnd(animator: Animator?) {
+                listener.onAnimationEnd()
             }
 
-            @Override
-            public void onAnimationCancel(Animator animator) {
+            override fun onAnimationCancel(animator: Animator?) {
             }
 
-            @Override
-            public void onAnimationRepeat(Animator animator) {
+            override fun onAnimationRepeat(animator: Animator?) {
             }
-        });
-        oa.start();
+        })
+        oa.start()
     }
 
-    @Override
-    public void animateOutView(View target, Point point, long duration, final AnimationEndListener listener) {
-        ObjectAnimator oa = ObjectAnimator.ofFloat(target, ALPHA, INVISIBLE);
-        oa.setDuration(duration).addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animator) {
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                listener.onAnimationEnd();
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-            }
-        });
-        oa.start();
+    override fun animateTargetToPoint(showcaseView: MaterialShowcaseView, point: Point) {
+        val set = AnimatorSet()
+        val xAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseX", point.x)
+        val yAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseY", point.y)
+        set.playTogether(xAnimator, yAnimator)
+        set.interpolator = interpolator
+        set.start()
     }
 
-    @Override
-    public void animateTargetToPoint(MaterialShowcaseView showcaseView, Point point) {
-        AnimatorSet set = new AnimatorSet();
-        ObjectAnimator xAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseX", point.x);
-        ObjectAnimator yAnimator = ObjectAnimator.ofInt(showcaseView, "showcaseY", point.y);
-        set.playTogether(xAnimator, yAnimator);
-        set.setInterpolator(interpolator);
-        set.start();
+    companion object {
+        private const val ALPHA = "alpha"
+        private const val INVISIBLE = 0f
+        private const val VISIBLE = 1f
     }
 }

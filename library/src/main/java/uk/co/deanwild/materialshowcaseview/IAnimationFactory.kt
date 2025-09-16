@@ -1,23 +1,31 @@
-package uk.co.deanwild.materialshowcaseview;
+package uk.co.deanwild.materialshowcaseview
 
-import android.graphics.Point;
-import android.view.View;
+import android.graphics.Point
+import android.view.View
 
+interface IAnimationFactory {
+    fun animateInView(
+        target: View,
+        point: Point,
+        duration: Long,
+        listener: AnimationStartListener
+    )
 
-public interface IAnimationFactory {
+    fun animateOutView(
+        target: View,
+        point: Point,
+        duration: Long,
+        listener: AnimationEndListener
+    )
 
-    void animateInView(View target, Point point, long duration, AnimationStartListener listener);
+    fun animateTargetToPoint(showcaseView: MaterialShowcaseView, point: Point)
 
-    void animateOutView(View target, Point point, long duration, AnimationEndListener listener);
-
-    void animateTargetToPoint(MaterialShowcaseView showcaseView, Point point);
-
-    public interface AnimationStartListener {
-        void onAnimationStart();
+    interface AnimationStartListener {
+        fun onAnimationStart()
     }
 
-    public interface AnimationEndListener {
-        void onAnimationEnd();
+    interface AnimationEndListener {
+        fun onAnimationEnd()
     }
 }
 

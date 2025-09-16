@@ -1,85 +1,59 @@
-package uk.co.deanwild.materialshowcaseview.shape;
+package uk.co.deanwild.materialshowcaseview.shape
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
-
-import uk.co.deanwild.materialshowcaseview.target.Target;
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import uk.co.deanwild.materialshowcaseview.target.Target
+import kotlin.math.max
 
 /**
  * Circular shape for target.
  */
-public class CircleShape implements Shape {
+class CircleShape : Shape {
+    var radius: Int = 200
+    var isAdjustToTarget: Boolean = true
+    private var padding = 0
 
-    private int radius = 200;
-    private boolean adjustToTarget = true;
-    private int padding;
-
-    public CircleShape() {
+    constructor(radius: Int) {
+        this.radius = radius
     }
 
-    public CircleShape(int radius) {
-        this.radius = radius;
-    }
+    constructor(bounds: Rect) : this(getPreferredRadius(bounds))
 
-    public CircleShape(Rect bounds) {
-        this(getPreferredRadius(bounds));
-    }
+    constructor(target: Target) : this(target.bounds)
 
-    public CircleShape(Target target) {
-        this(target.getBounds());
-    }
-
-    public void setAdjustToTarget(boolean adjustToTarget) {
-        this.adjustToTarget = adjustToTarget;
-    }
-
-    public boolean isAdjustToTarget() {
-        return adjustToTarget;
-    }
-
-    public int getRadius() {
-        return radius;
-    }
-
-    public void setRadius(int radius) {
-        this.radius = radius;
-    }
-
-    @Override
-    public void draw(Canvas canvas, Paint paint, int x, int y) {
+    override fun draw(canvas: Canvas, paint: Paint, x: Int, y: Int) {
         if (radius > 0) {
-            canvas.drawCircle(x, y, radius + padding, paint);
+            canvas.drawCircle(x.toFloat(), y.toFloat(), (radius + padding).toFloat(), paint)
         }
     }
 
-    @Override
-    public void updateTarget(Target target) {
-        if (adjustToTarget)
-            radius = getPreferredRadius(target.getBounds());
+    override fun updateTarget(target: Target) {
+        if (this.isAdjustToTarget) radius = getPreferredRadius(target.bounds)
     }
 
-    @Override
-    public int getTotalRadius() {
-        return radius + padding;
+    override val totalRadius: Int
+        get() {
+            return radius + padding
+        }
+
+    override fun setPadding(padding: Int) {
+        this.padding = padding
     }
 
-    @Override
-    public void setPadding(int padding) {
-        this.padding = padding;
-    }
+    override val width: Int
+        get() {
+            return radius * 2
+        }
 
-    @Override
-    public int getWidth() {
-        return radius * 2;
-    }
+    override val height: Int
+        get() {
+            return radius * 2
+        }
 
-    @Override
-    public int getHeight() {
-        return radius * 2;
-    }
-
-    public static int getPreferredRadius(Rect bounds) {
-        return Math.max(bounds.width(), bounds.height()) / 2;
+    companion object {
+        fun getPreferredRadius(bounds: Rect): Int {
+            return max(bounds.width(), bounds.height()) / 2
+        }
     }
 }
