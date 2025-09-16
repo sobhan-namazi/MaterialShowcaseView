@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/content_box"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -14,7 +14,8 @@
         android:textColor="@android:color/white"
         android:paddingLeft="5dp"
         android:textSize="30dp"
-        android:layout_marginBottom="15dp" />
+        android:layout_marginBottom="15dp"
+        android:layout_alignParentTop="true" />
 
     <TextView
         android:id="@+id/tv_content"
@@ -22,11 +23,11 @@
         android:layout_height="wrap_content"
         android:textColor="@android:color/white"
         android:paddingLeft="5dp"
-        android:textSize="20dp" />
+        android:textSize="20dp"
+        android:layout_below="@id/tv_title" />
 
     <Button
         android:id="@+id/btn_dismiss"
-        android:background="?android:attr/selectableItemBackground"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
@@ -37,7 +38,8 @@
         android:paddingRight="5dp"
         android:textColor="@android:color/white"
         android:textSize="22dp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:layout_alignParentBottom="true" />
 
     <Button
         android:id="@+id/btn_skip"
@@ -54,4 +56,4 @@
         android:textSize="18dp"
         android:visibility="visible" />
 
-</LinearLayout>
+</RelativeLayout>
