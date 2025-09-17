@@ -54,7 +54,11 @@ class MaterialShowcaseView : FrameLayout, OnTouchListener, View.OnClickListener 
     private var mWasDismissed = false
     private var mWasSkipped = false
     private var mShapePadding: Int = DEFAULT_SHAPE_PADDING
-    private var tooltipMargin: Int = DEFAULT_TOOLTIP_MARGIN
+    private var tooltipOffset: Int = DEFAULT_TOOLTIP_OFFSET
+
+    private var tooltipMarginStart: Int = DEFAULT_TOOLTIP_MARGIN_START
+
+    private var tooltipMarginEnd: Int = DEFAULT_TOOLTIP_MARGIN_END
 
     private var layoutRes: Int = R.layout.showcase_content
 
@@ -373,6 +377,26 @@ class MaterialShowcaseView : FrameLayout, OnTouchListener, View.OnClickListener 
              */
             if (layoutParamsChanged) mContentBox!!.setLayoutParams(contentLP)
 
+            var tooltipLayoutParamsChanged = false
+
+            if (toolTip != null) {
+                val tooltipLP = toolTip!!.getLayoutParams() as? LayoutParams
+
+                if (tooltipLP?.marginStart != tooltipMarginStart) {
+                    tooltipLP?.marginStart = tooltipMarginStart
+                    tooltipLayoutParamsChanged = true
+                }
+
+                if (tooltipLP?.marginEnd != tooltipMarginEnd) {
+                    tooltipLP?.marginEnd = tooltipMarginEnd
+                    tooltipLayoutParamsChanged = true
+                }
+
+                if (tooltipLayoutParamsChanged) {
+                    tooltipLP?.let { toolTip!!.setLayoutParams(it) }
+                }
+            }
+
             updateToolTip()
         }
     }
@@ -387,7 +411,7 @@ class MaterialShowcaseView : FrameLayout, OnTouchListener, View.OnClickListener 
 
                 val shapeDiameter = mShape!!.totalRadius * 2
                 var toolTipDistance = (shapeDiameter - mTarget!!.bounds.height()) / 2
-                toolTipDistance += tooltipMargin
+                toolTipDistance += tooltipOffset
 
                 toolTip!!.show(toolTipDistance)
             }
@@ -485,8 +509,13 @@ class MaterialShowcaseView : FrameLayout, OnTouchListener, View.OnClickListener 
         mShapePadding = padding
     }
 
-    private fun setTooltipMargin(margin: Int) {
-        tooltipMargin = margin
+    private fun setTooltipOffset(offset: Int) {
+        tooltipOffset = offset
+    }
+
+    private fun setTooltipMargins(marginStart: Int = tooltipMarginStart, marginEnd: Int = tooltipMarginEnd) {
+        tooltipMarginStart = marginStart
+        tooltipMarginEnd = marginEnd
     }
 
     private fun setDismissOnTouch(dismissOnTouch: Boolean) {
@@ -818,8 +847,13 @@ class MaterialShowcaseView : FrameLayout, OnTouchListener, View.OnClickListener 
             return this
         }
 
-        fun setTooltipMargin(margin: Int): Builder {
-            showcaseView.setTooltipMargin(margin)
+        fun setTooltipOffset(offset: Int): Builder {
+            showcaseView.setTooltipOffset(offset)
+            return this
+        }
+
+        fun setTooltipMargins(marginStart: Int = showcaseView.tooltipMarginStart, marginEnd: Int = showcaseView.tooltipMarginEnd): Builder {
+            showcaseView.setTooltipMargins(marginStart, marginEnd)
             return this
         }
 
@@ -1057,7 +1091,9 @@ class MaterialShowcaseView : FrameLayout, OnTouchListener, View.OnClickListener 
 
     companion object {
         const val DEFAULT_SHAPE_PADDING: Int = 10
-        const val DEFAULT_TOOLTIP_MARGIN: Int = 10
+        const val DEFAULT_TOOLTIP_OFFSET: Int = 10
+        const val DEFAULT_TOOLTIP_MARGIN_START: Int = 10
+        const val DEFAULT_TOOLTIP_MARGIN_END: Int = 10
 
         /**
          * Static helper method for resetting single use flag

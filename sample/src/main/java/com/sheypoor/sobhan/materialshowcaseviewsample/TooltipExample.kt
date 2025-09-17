@@ -69,7 +69,10 @@ class TooltipExample : Activity(), View.OnClickListener {
                 .setTarget(toolbar!!.findViewById(R.id.btn_show))
                 .setToolTip(toolTip1)
                 .withRectangleShape(radius = 30f)
-                .setTooltipMargin(30)
+                .setTooltipOffset(30)
+                .setTooltipMargins(
+                    50, 30
+                )
 //                .setShapePadding(50)
                 .setDismissOnTouch(true)
                 .setMaskColour(resources.getColor(R.color.tooltip_mask))
@@ -87,7 +90,7 @@ class TooltipExample : Activity(), View.OnClickListener {
             MaterialShowcaseView.Builder(this)
                 .setTarget(fab)
                 .setToolTip(toolTip2)
-                .setTooltipMargin(30)
+                .setTooltipOffset(30)
                 .setShapePadding(50)
                 .setDismissText("GOT IT")
                 .setMaskColour(resources.getColor(R.color.tooltip_mask))

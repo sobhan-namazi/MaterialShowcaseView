@@ -210,6 +210,14 @@ class ShowcaseTooltip private constructor(context: Context?) {
         return this
     }
 
+    fun getLayoutParams(): ViewGroup.LayoutParams? {
+        return tooltipView.layoutParams
+    }
+
+    fun setLayoutParams(tooltipLP: ViewGroup.LayoutParams) {
+        tooltipView.layoutParams = tooltipLP
+    }
+
     enum class Position {
         LEFT,
         RIGHT,
