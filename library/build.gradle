@@ -36,6 +36,10 @@ afterEvaluate {
         publications {
             release(MavenPublication) {
                 from components.release
+
+                groupId = "com.github.sobhan-namazi"
+                artifactId = "MaterialShowcaseView"
+                version = "1.0.0"
             }
         }
     }
